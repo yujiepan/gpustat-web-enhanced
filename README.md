@@ -1,3 +1,3 @@
 # gpustat-web-plus
 
-Enhanced [gpustat-web](https://github.com/wookayin/gpustat-web), a web interface of gpustat --- aggregate gpustat across multiple nodes.
+Enhancing [gpustat-web](https://github.com/wookayin/gpustat-web), a web interface of gpustat --- aggregate gpustat across multiple nodes.
