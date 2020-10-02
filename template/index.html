@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GPUstat</title>
+    <link href="//google-fonts.mirrors.sjtug.sjtu.edu.cn/css2?family=Fira+Code:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        font-family: "Fira Code", "XHei iOS7 Mono", "DejaVu Sans Mono", Consolas, monospace, "Courier New";
+        /* overflow-x: scroll; */
+        overflow-y: scroll;
+        margin-top: 8px;
+      }
+
+      .body_foreground {
+        font-size: 12px;
+        background: rgba(0, 0, 0, 1);
+      }
+
+      .body_background,
+      nav.header {
+        margin-bottom: 9px;
+      }
+
+      nav.header a {
+        color: #4b9be6;
+        margin-right: 5px;
+        text-decoration: none;
+      }
+
+      nav.header a:visited {
+        color: #329af0;
+        text-decoration: none;
+      }
+
+      nav.header a:hover {
+        color: #a3daff;
+      }
+
+      .content a {
+        color: gray;
+        margin-right: 5px;
+        text-decoration: none;
+      }
+
+      .content a:visited {
+        color: gray;
+        text-decoration: none;
+      }
+
+      .content a:hover {
+        color: orange;
+      }
+
+      .content a.fixed_width {
+        width: 120px;
+        display: inline-block;
+      }
+
+      pre.highlight {
+        background-color: #501414;
+      }
+
+      pre {
+        line-height: 1;
+        font-family: "Fira Code", "XHei iOS7 Mono", "DejaVu Sans Mono", Consolas, monospace, "Courier New";
+        white-space: pre;
+        word-wrap: normal;
+        margin: 0px;
+      }
+
+      pre.ansi2html-content {
+        line-height: 1;
+        font-family: "Fira Code", "XHei iOS7 Mono", "DejaVu Sans Mono", Consolas, monospace, "Courier New";
+        white-space: pre;
+        word-wrap: normal;
+      }
+
+      #gpustat {
+        line-height: 1;
+        font-size: 1.05em;
+        background: rgba(0, 0, 0, 1);
+        animation: fade-in;
+        animation-duration: 0.6s;
+        -webkit-animation: fade-in 0.6s;
+      }
+
+      #gpustat-debug {
+        line-height: 1;
+        font-size: 1.05em;
+        background: rgba(0, 0, 0, 1);
+        animation: fade-in;
+        animation-duration: 0.6s;
+        -webkit-animation: fade-in 0.6s;
+      }
+
+      #notification {
+        margin: 2px;
+        margin-top: -5pt;
+      }
+
+      #right-column {
+        background: rgba(0, 0, 0, 0.6);
+        margin: auto;
+        margin-top: 7px;
+        width: 35%;
+        position: fixed;
+        right: 0px;
+        top: 5px;
+        height: 100%;
+        font-size: 11px;
+        z-index: 998;
+        text-align: left;
+        /* overflow-x: scroll; */
+        overflow-y: scroll;
+      }
+
+      #right-column form {
+        margin: 0px;
+        padding: 0px;
+      }
+
+      #right-column form input {
+        background-color: #a09e9e;
+        border: none;
+        font-size: 10px;
+        margin: 0px;
+      }
+
+      #right-column form button {
+        background-color: #777777;
+        border: 0px;
+        color: rgb(241, 231, 231);
+        padding: 1px 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 10px;
+        cursor: pointer;
+      }
+
+      #toggle-right-column {
+        background: rgba(0, 0, 0, 0.6);
+        margin: none;
+        border: none;
+        padding: none;
+        width: 35%;
+        position: fixed;
+        right: 0px;
+        top: 0px;
+        height: 9px;
+        font-size: 11px;
+        z-index: 999;
+        text-align: right;
+        /* overflow-x: scroll; */
+        /* overflow-y: scroll; */
+      }
+
+      #toggle-right-column a {
+        text-decoration: none;
+        color: #eeeeee;
+        background-color: rgb(50, 61, 71);
+      }
+
+      #diskusage-div {
+        animation: fade-in;
+        animation-duration: 0.8s;
+        -webkit-animation: fade-in 0.8s;
+      }
+
+      #network-div {
+        animation: fade-in;
+        animation-duration: 0.8s;
+        -webkit-animation: fade-in 0.8s;
+      }
+      #topusers-div {
+        animation: fade-in;
+        animation-duration: 1s;
+        -webkit-animation: fade-in 1s;
+      }
+
+      #history-div {
+        animation: fade-in;
+        animation-duration: 1.2s;
+        -webkit-animation: fade-in 1.2s;
+      }
+
+      div.topusers-block {
+        padding: 0px;
+        line-height: 0.9;
+        font-size: 11px;
+        display: none;
+        animation-duration: 0.5s;
+        -webkit-animation: fade-in 0.5s;
+        animation: fade-in 0.5s;
+      }
+
+      td {
+        padding: 0px;
+      }
+
+      @keyframes fade-in {
+        0% {
+          opacity: 0;
+        }
+        40% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @-webkit-keyframes fade-in {
+        0% {
+          opacity: 0;
+        }
+        40% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      ::-webkit-scrollbar-track-piece {
+        background-color: #000000;
+      }
+
+      ::-webkit-scrollbar {
+        width: 9px;
+        height: 9px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background-color: #000000;
+        background-clip: padding-box;
+        min-height: 28px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: rgb(0, 0, 0);
+      }
+
+      .grey {
+        color: #666666;
+        margin-right: 6px;
+        margin-left: 6px;
+      }
+
+      .blue {
+        color: #329af0;
+      }
+
+      .orange {
+        color: #df6722;
+      }
+
+      .red {
+        color: red;
+      }
+
+      section.panel {
+        line-height: 0.95;
+        font-size: 11px;
+        margin-top: 2px;
+        margin-bottom: 25px;
+        border: 0px;
+        padding: 0px;
+        font-weight: normal;
+      }
+
+      section.panel .title {
+        font-size: 14px;
+        color: #329af0;
+        font-weight: normal;
+        margin-bottom: 1px;
+      }
+
+      section.panel .tab {
+        font-size: 10px;
+      }
+
+      section.panel .tab a {
+        text-decoration: none;
+        line-height: 1;
+        color: gray;
+      }
+
+      section.panel .content {
+      }
+
+      section.panel .comment {
+        margin-bottom: 8px;
+        font-size: 9px;
+        color: gray;
+      }
+    </style>
+
+    {{ ansi2html_headers | safe }}
+  </head>
+
+  <body class="body_foreground body_background">
+    <nav class="header">
+      <a href="#">GPUstat-web</a>
+      <a href="javascript:clearTimeout(window.timer);" class="grey" style="color: gray;" onclick="this.style.display='none';"> [turn off auto-refresh]</a>
+      <span style="font-size: xx-small;"></span><span id="last-wstime" style="font-size: xx-small;"></span>
+      &thinsp;
+    </nav>
+
+    <pre class="ansi2html-content"><p id="notification" class='red'></p></pre>
+
+    <div id="gpustat"><pre class="ansi2html-content" id="gpustat-content"></pre></div>
+
+    <div id="toggle-right-column">
+      <a id="btn-toggle-right-column" href="javascript:toggle_right_column();"> [toggle right column]</a>
+    </div>
+
+    <div id="right-column">
+      <section id="links-div" class="panel">
+        <div class="title">Useful Links</div>
+        <div class="content">
+          <a class="fixed_width" target="_blank" href="https://www.google.com">Google</a>
+        </div>
+      </section>
+
+      <section id="network-div" class="panel">
+        <div class="title">Network Status</div>
+        <div class="content">
+          <div class="comment"></div>
+          <pre class="ansi2html-content" id="network-content">Reading...</pre>
+        </div>
+      </section>
+
+      <section id="diskusage-div" class="panel">
+        <div class="title">Disk Usages</div>
+        <div class="tab"></div>
+        <div class="content">
+          <div class="comment"></div>
+          <pre class="ansi2html-content" id="diskusage-content">Reading...</pre>
+        </div>
+      </section>
+
+      <section id="topusers-div" class="panel">
+        <div class="title">Top Users</div>
+        <div class="tab">
+          <a id="realtime-btn" style="color: white;" onmouseover="javascript:highlight(this);" onmouseout="dehighlight(this,'realtime');" href="javascript:show_history('realtime');">[real time]</a>
+          <a id="past1hour-btn" onmouseover="javascript:highlight(this);" onmouseout="dehighlight(this,'past1hour');" href="javascript:show_history('past1hour');">[past 1 hour]</a>
+          <br />
+          <a id="past24hours-btn" onmouseover="javascript:highlight(this);" onmouseout="dehighlight(this,'past24hours');" href="javascript:show_history('past24hours');">[past 24 hours]</a>
+          <a id="past3days-btn" onmouseover="javascript:highlight(this);" onmouseout="dehighlight(this,'past3days');" href="javascript:show_history('past3days');">[past 3 days]</a>
+          <br />
+          <a id="past7days-btn" onmouseover="javascript:highlight(this);" onmouseout="dehighlight(this,'past7days');" href="javascript:show_history('past7days');">[past 7 days]</a>
+        </div>
+
+        <br />
+
+        <div class="content topusers-block" id="realtime-content" style="display: block;">
+          <div class="comment"></div>
+          <pre class="ansi2html-content">Reading real time usages ...</pre>
+        </div>
+
+        <div class="content topusers-block" id="past1hour-content" style="display: none;">
+          <div class="comment"></div>
+          <pre class="ansi2html-content">Reading past 1 hour ...</pre>
+        </div>
+
+        <div class="content topusers-block" id="past24hours-content" style="display: none;">
+          <div class="comment"></div>
+          <pre class="ansi2html-content">Reading past 24 hours...</pre>
+        </div>
+
+        <div class="content topusers-block" id="past3days-content" style="display: none;">
+          <div class="comment"></div>
+          <pre class="ansi2html-content">Reading past 3 days...</pre>
+        </div>
+
+        <div class="content topusers-block" id="past7days-content" style="display: none;">
+          <div class="comment"></div>
+          <pre class="ansi2html-content">Reading past 7 days ...</pre>
+        </div>
+
+        <br />
+        <span style="font-size: 7px; color: #777777;">
+          GPU·h/GPU·day: calculated on 1080Ti (11178MB) <br />
+          History records are updated every 60s.
+        </span>
+      </section>
+    </div>
+    <!-- Implemented&nbsp;based&nbsp;on&nbsp;<a
+      style="color: #329af0"
+      href="https://github.com/wookayin"
+      target="_blank"
+      >@wookayin</a
+    > -->
+
+    <script>
+      String.prototype.format = function (args) {
+        var result = this;
+        if (arguments.length < 1) {
+          return result;
+        }
+        var data = arguments;
+        if (arguments.length == 1 && typeof args == "object") {
+          data = args;
+        }
+        for (var key in data) {
+          var value = data[key];
+          if (undefined != value) {
+            result = result.replace("{" + key + "}", value);
+          }
+        }
+        return result;
+      };
+
+      function getNowFormatDate() {
+        var date = new Date();
+        var seperator1 = "-";
+        var seperator2 = ":";
+        var currentdate =
+          date.getFullYear() +
+          seperator1 +
+          (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1) +
+          seperator1 +
+          (date.getDate() < 10 ? "0" + date.getDate() : date.getDate()) +
+          " " +
+          (date.getHours() < 10 ? "0" + date.getHours() : date.getHours()) +
+          seperator2 +
+          (date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes()) +
+          seperator2 +
+          (date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds());
+        return currentdate;
+      }
+
+      function make_table(items, unit, times, tofixed) {
+        try {
+          var icon_base =
+            '<svg t="1573561102035" class="icon" viewBox="0 0 1138 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1211" width="9.5" height="9.5"><path d="M186.997713 866.592817L96.433117 325.992722l245.184301 204.225439 224.932418-358.162496 200.641538 358.219383 275.334574-204.282326-83.965668 540.600095H186.997713zM60.821662 269.503625a59.902336 59.902336 0 1 1 0-119.747785 59.902336 59.902336 0 0 1 0 119.747785zM569.8493 119.776228A59.902336 59.902336 0 1 1 569.8493 0.028444a59.902336 59.902336 0 0 1 0 119.747784z m508.970751 149.727397a59.902336 59.902336 0 1 1 0-119.747785 59.902336 59.902336 0 0 1 0 119.747785zM213.279649 1001.984612a28.443654 28.443654 0 1 1 0-56.887309h720.193328a28.443654 28.443654 0 0 1 0 56.887309H213.222762z" fill="{0}" p-id="1212"></path></svg>';
+          var colors = ["#FFD700", "#C0C0C0", "#A67D3D"];
+          var line_template =
+            '<tr><td style="text-align: right"><span class="ansi36">{0}&thinsp;{1}</span></td><td></td><td>{2}</td><td>&thinsp;&thinsp;</td><td style="text-align: right"><span class="ansi33">{3}&thinsp;</span>{4}</td></tr>';
+          var to_show = items.slice(0, 100);
+          var res = "<table>";
+          for (j = 0; j < to_show.length; j++) {
+            var icon = j > 2 ? "" : icon_base.format(colors[j]);
+            res += line_template.format(icon, j + 1, to_show[j][0], (to_show[j][1] * times).toFixed(tofixed), unit);
+          }
+          res += "</table>";
+          return res;
+        } catch (error) {
+          return error;
+        }
+      }
+
+      function show_history(which) {
+        var list = ["realtime", "past1hour", "past24hours", "past3days", "past7days"];
+        for (j = 0; j < list.length; j++) {
+          document.getElementById(list[j] + "-content").style.display = "none";
+          document.getElementById(list[j] + "-btn").style.color = "#888888";
+        }
+        document.getElementById(which + "-content").style.display = "block";
+        document.getElementById(which + "-btn").style.color = "#FFFFFF";
+      }
+
+      function highlight(a) {
+        a.style.color = "#dadad9";
+      }
+
+      function dehighlight(a, which) {
+        if (document.getElementById(which + "-content").style.display === "block") {
+          a.style.color = "#FFFFFF";
+        } else {
+          a.style.color = "#888888";
+        }
+      }
+
+      function toggle_right_column() {
+        var col = document.getElementById("right-column");
+        console.log(col.style.display === "block");
+        col.style.display = col.style.display === "none" ? "block" : "none";
+      }
+
+      function updatetop() {
+        var users = document.getElementsByClassName("ansi1 ansi30");
+        var usages = new Array();
+        for (j = 0; j < users.length; j++) {
+          var user = users[j].textContent;
+          if (user[0] >= "a") {
+            var number_str = users[j].nextElementSibling.innerText;
+            var number = Number(number_str.slice(0, number_str.length - 1));
+            if (user in usages) {
+              usages[user] += number;
+            } else {
+              usages[user] = number;
+            }
+          }
+        }
+        var items = Object.keys(usages)
+          .map(function (key) {
+            return [key, usages[key]];
+          })
+          .sort(function (first, second) {
+            return second[1] - first[1];
+          });
+        document.getElementById("realtime-content").getElementsByTagName("pre")[0].innerHTML = make_table(items, "MB", 1.0, 0);
+      }
+
+      setTimeout(updatetop, 500);
+      setTimeout(updatetop, 3500);
+
+      function is_available(line, larger_than) {
+        return true;
+        //   try {
+        //  // <!-- var re = /span class=\"ansi1 ansi33\"> \((\d+)\)<\/span>\;   -->
+        //   var used = line.match();
+        //   console.log(used);
+        //   return true;
+
+        // }catch {
+        //       return true;
+        // }
+      }
+
+      function render_gpu(lines, larger_than) {
+        var res = "";
+        for (i = 0; i < lines.length; i++) {
+          if (is_available(lines[i], larger_than)) {
+            res += "<pre class='highlight'>" + lines[i] + "</pre>";
+          } else {
+            res += "<pre>" + lines[i] + "</pre>";
+          }
+        }
+        return res;
+      }
+
+      function update_info(e) {
+        var msg = JSON.parse(e.data);
+        data = e.data;
+        //console.log(data);
+        // document.getElementById("gpustat-content-debug").innerHTML = render_gpu(msg.remote_status.split('\n'), 0);
+
+        // notification & last update time
+        document.getElementById("notification").innerHTML = msg.notification;
+        document.getElementById("last-wstime").innerHTML = getNowFormatDate();
+
+        // gpustat
+        document.getElementById("gpustat-content").innerHTML = msg.remote_status;
+
+        // disk
+        document.getElementById("diskusage-div").getElementsByClassName("comment")[0].innerHTML = msg.disk_status_time;
+        document.getElementById("diskusage-div").getElementsByTagName("pre")[0].innerHTML = msg.disk_status;
+
+        // network
+        document.getElementById("network-div").getElementsByTagName("pre")[0].innerHTML = msg.network_status;
+        document.getElementById("network-div").getElementsByClassName("comment")[0].innerHTML = msg.network_status_time;
+
+        // real time top users
+        document.getElementById("topusers-div").getElementsByClassName("comment")[0].innerHTML = getNowFormatDate();
+        updatetop();
+
+        // history
+        document.getElementById("past1hour-content").getElementsByTagName("pre")[0].innerHTML = make_table(msg.top_users_status.past1hour, "GB·h", 1.0, 2);
+        document.getElementById("past1hour-content").getElementsByClassName("comment")[0].innerHTML = msg.top_users_status_time;
+        document.getElementById("past24hours-content").getElementsByTagName("pre")[0].innerHTML = make_table(msg.top_users_status.past24hours, "GPU·h", 0.09161, 2);
+        document.getElementById("past24hours-content").getElementsByClassName("comment")[0].innerHTML = msg.top_users_status_time;
+        document.getElementById("past3days-content").getElementsByTagName("pre")[0].innerHTML = make_table(msg.top_users_status.past3days, "GPU·day", 0.00381702, 2);
+        document.getElementById("past3days-content").getElementsByClassName("comment")[0].innerHTML = msg.top_users_status_time;
+        document.getElementById("past7days-content").getElementsByTagName("pre")[0].innerHTML = make_table(msg.top_users_status.past7days, "GPU·day", 0.00381702, 2);
+        document.getElementById("past7days-content").getElementsByClassName("comment")[0].innerHTML = msg.top_users_status_time;
+      }
+
+      var ws = new WebSocket("ws://{{http_host}}/{{ws_name}}");
+      ws.onopen = function (e) {
+        console.log("Websocket connection established", ws);
+        ws.send("gpustat");
+      };
+      ws.onerror = function (error) {
+        console.log("onerror", error);
+      };
+      ws.onmessage = update_info;
+
+      var ws2 = new WebSocket("ws://{{public_ip}}/{{ws_name}}");
+      ws2.onopen = function (e) {
+        console.log("Websocket connection established", ws2);
+        ws2.send("gpustat");
+      };
+      ws2.onerror = function (error) {
+        console.log("onerror", error);
+      };
+      ws2.onmessage = update_info;
+
+      window.onbeforeunload = function () {
+        ws.close();
+        ws2.close(); // close websocket client on exit
+      };
+      window.timer = setInterval(function () {
+        if (ws.readyState === 1) {
+          ws.send("gpustat");
+        } else {
+          ws2.send("gpustat");
+        }
+      }, parseInt("{{interval}}")); //parseInt: avoid vscode autoformatting
+    </script>
+  </body>
+</html>
