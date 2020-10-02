@@ -43,3 +43,7 @@ Enhanced [gpustat-web](https://github.com/wookayin/gpustat-web), a web interface
  - [ ] Modify the `Worker` class. 
  - [ ] Nicer HTML file.
  - [ ] Detailed installation instructions.
+
+## Acknowledge
+
+ - [gpustat-web](https://github.com/wookayin/gpustat-web)
